@@ -1,29 +1,32 @@
 import numpy as np
-from opensimplex import seed, noise2array
-from vlib.math.Functions import sigmoid
+import opensimplex as sx
 
 
 class GradientNoise:
     
     
-    @staticmethod
-    def pts(x, y, max_seed=2**20, scale=1):
-        seed(np.random.randint(max_seed))
-        return noise2array(np.array(x), np.array(y))**(scale)
-    
-    
-    @staticmethod
-    def grid(h, w, scale=1):
-        rows, cols = list(range(h)), list(range(w))
-        return GradientNoise.pts(rows, cols, scale=scale)
+    def __init__(self, size, scale=(1,1), seed=-1):
+        self.sz = size
+        self.I = np.array(list(range(self.sz[0])), dtype='uint64')
+        self.J = np.array(list(range(self.sz[1])), dtype='uint64')
+        self.change_scale(scale)
+        self.change_seed(seed)
 
 
-if __name__ == "__main__":
-    
-    from PIL import Image
-    
-    grid = GradientNoise.grid(1000, 1000, 1/4) * 255
-    im = Image.fromarray(grid)
-    im.show()
-    
+    def change_scale(self, scale):
+        self.sc = scale
+        self.Is = self.I / self.sc[0]
+        self.Js = self.J / self.sc[1]
+
+
+    def change_seed(self, seed):
+        if seed < 0:
+            sx.seed(np.random.randint(2**20))
+        else:
+            sx.seed(np.random.randint(seed))
+
+
+    def g2D(self, norm=(-1,1)):
+        out = sx.noise2array(self.Is, self.Js)
+        return norm[0] + (norm[1] - norm[0]) * ((out+1) / 2)
     
