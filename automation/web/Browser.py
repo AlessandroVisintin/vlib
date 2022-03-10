@@ -9,7 +9,7 @@ from selenium.webdriver import DesiredCapabilities
 class Browser:
 
 
-    def __init__(self, drv_path, **kwargs):
+    def __init__(self, drv_path=None, **kwargs):
 
         try:
             os.chmod(drv_path, 0o755)    
@@ -36,8 +36,12 @@ class Browser:
         if 'headless' in kwargs and kwargs['headless'] == True:
             opt.add_argument("--headless")
         
-        self.drv = selenium.webdriver.Chrome(
-            drv_path, options=opt, desired_capabilities=cap)
+        if drv_path is None:
+            self.drv = selenium.webdriver.Chrome(
+                options=opt, desired_capabilities=cap)
+        else:
+            self.drv = selenium.webdriver.Chrome(
+                drv_path, options=opt, desired_capabilities=cap)
 
         if 'timeout' in kwargs:
             self.drv.set_page_load_timeout(kwargs['timeout'])
