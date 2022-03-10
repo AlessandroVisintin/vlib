@@ -11,11 +11,6 @@ class Browser:
 
     def __init__(self, drv_path=None, **kwargs):
 
-        try:
-            os.chmod(drv_path, 0o755)    
-        except FileNotFoundError:
-            raise FileNotFoundError('PATH not pointing to driver location')
-
         cap = DesiredCapabilities.CHROME
         cap['goog:loggingPrefs'] = {"performance": "ALL"}
 
@@ -40,6 +35,10 @@ class Browser:
             self.drv = selenium.webdriver.Chrome(
                 options=opt, desired_capabilities=cap)
         else:
+            try:
+                os.chmod(drv_path, 0o755)    
+            except FileNotFoundError:
+                raise FileNotFoundError('PATH not pointing to driver location')
             self.drv = selenium.webdriver.Chrome(
                 drv_path, options=opt, desired_capabilities=cap)
 
