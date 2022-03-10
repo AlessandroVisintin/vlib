@@ -1,3 +1,4 @@
+import math
 from datetime import datetime as dt
 import os, json, requests, time
 from urllib.parse import urlparse, unquote_plus
@@ -121,14 +122,14 @@ class Twitter:
         return out
 
 
-    def crawl_followers(self, uname, count=20, crs=None, verbose=True):
+    def crawl_followers(self, uname, crs=None, verbose=True, res=3600):
         ui = self.user_info(uname)
         user = (ui['uid'], ui['uname'], ui['cdate'])
         cday = int(int(time.time() / 86400) * 86400)
         info = (ui['uid'], cday, ui['fng'], ui['fws'], ui['twt'], ui['img'], ui['nam'], ui['dsc'], ui['loc'])
         self.db.insert_rows(name='Users', rows=[user])
         self.db.insert_rows(name='Info', rows=[info])
-        
+
         self.brs.get(f'https://www.twitter.com/{uname}/followers', sleep=2)
         self.brs.scroll(2000)
         headers = {}
@@ -148,8 +149,13 @@ class Twitter:
         headers['sec-fetch-mode'] = 'cors'
         headers['sec-fetch-dest'] = 'empty'
         headers['cookie'] = '; '.join([f'{c["name"]}={c["value"]}' for c in self.brs.get_info('cookies')])
+        
+        print(url, end='\n\n')
+        print(urlparse(url).query, end='\n\n')
+        print(urlparse(url).query.split('variables='))
+        
         variables = json.loads(urlparse(url).query.split('variables=')[1])
-        variables['count'] = count
+        variables['count'] = 100
         if crs is not None:
             variables['cursor'] = crs
         
@@ -164,9 +170,34 @@ class Twitter:
                 time.sleep(60)
                 continue
             
-            data = json.loads(response.text)
-            data = data['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']
-            tmp = [e['content']['itemContent']['user_results']['result'] for e in data if 'user' in e['entryId']]
+            try:
+                data = json.loads(response.text)
+                data = data['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']
+                tmp = [e['content']['itemContent']['user_results']['result'] for e in data if 'user' in e['entryId']]
+            except KeyError:
+                time.sleep(60)
+                continue
+
+            top = variables['cursor']
+            btm = [e['content'] for e in data if 'cursor-bottom' in e['entryId']][0]['value']
+            prv = int(top.split('|')[0])
+            prv = current_time if prv < 0 else int(Twitter.crs2stamp(prv))
+            nxt = int(btm.split('|')[0])
+            nxt = ui['cdate'] if nxt == 0 else int(Twitter.crs2stamp(nxt))
+            
+            count = variables['count']
+            if (prv - nxt) > res and count > 1:
+                count = 1 if (count - 5) < 1 else (count - 5)
+                variables['count'] = count
+                if verbose:
+                    print(f'count reduced to {count}')
+                continue
+            elif (prv - nxt) < (res / 2) and count < 100:
+                count = 100 if (count + 5) > 100 else (count + 5)
+                variables['count'] = count
+                if verbose:
+                    print(f'count augmented to {count}')
+            
             users = [
                 (
                     int(e['rest_id']),
@@ -186,12 +217,6 @@ class Twitter:
                     str(e['legacy']['location']),
                  ) for e in tmp]
             
-            top = variables['cursor']
-            btm = [e['content'] for e in data if 'cursor-bottom' in e['entryId']][0]['value']
-            prv = int(top.split('|')[0])
-            prv = current_time if prv < 0 else int(Twitter.crs2stamp(prv))
-            nxt = int(btm.split('|')[0])
-            nxt = ui['cdate'] if nxt == 0 else int(Twitter.crs2stamp(nxt))
             followers = [(int(variables['userId']), e[0], prv, nxt, idx)
                     for idx,e in enumerate(users)]
         
@@ -203,6 +228,7 @@ class Twitter:
                 variables['cursor'] = btm
                 remaining = int(response.headers['x-rate-limit-remaining'])
                 if verbose:
+                    print(f'{uname} {len(users)} {variables["cursor"]}')
                     print(f'{stamp2str(prv)} - {stamp2str(nxt)} - {remaining}\n')
                 if remaining < 15:
                     time.sleep(60 * (15 - remaining))
