@@ -15,8 +15,14 @@ class SQLite:
         self.conn.close()
 
 
+    def _tables(self):
+        query = "SELECT name FROM sqlite_master WHERE type='table';"
+        print(self.conn.execute(query).fetchall())
+    
+    
     def _schema(self, name):
-        print(self.conn.execute(f'PRAGMA table_info({name});').fetchall())
+        query = f"SELECT sql FROM sqlite_schema WHERE name = '{name}';"
+        print(self.conn.execute(query).fetchall())
 
 
     def _size(self, name, index='id'):

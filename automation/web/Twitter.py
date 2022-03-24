@@ -21,10 +21,12 @@ class Twitter:
         return round((cursor >> 22) / 250, 3)
     
     
-    def __init__(self, drv_path, out_path):
+    def __init__(self, browser, **kwargs):
         
-        self.out = out_path 
-        self.drv = drv_path
+        self.bname = browser
+        self.out = '.'
+        if 'out_folder' in kwargs:
+            self.out = kwargs['out_folder']
         
         self.db = SQLite(self.out, 'Twitter.db')
         self.db.create_table(
@@ -43,10 +45,10 @@ class Twitter:
             key=('uid1','uid2')
         )
         
-        self.brs = Browser(self.drv, headless=False)
+        self.brs = Browser(self.bname, **kwargs)
 
 
-    def login(self, email, username, password):
+    def load_session(self, email, username, password):
         if os.path.exists(f'{self.out}/session.json'):
             with open(f'{self.out}/session.json', 'r') as f:
                 out = json.load(f)    
@@ -59,39 +61,17 @@ class Twitter:
         
         self.brs.get('https://twitter.com/i/flow/login')
         self.brs.send('input[autocomplete="username"]', email)
-        self.brs.click(
-            '#layers > div > div > div > div > div > div > div.css-1dbjc4n.r-1'
-            'awozwy.r-18u37iz.r-1pi2tsx.r-1777fci.r-1xcajam.r-ipm5af.r-g6jmlv '
-            '> div.css-1dbjc4n.r-1867qdf.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9w'
-            '.r-1279nm1.r-htvplk.r-1udh08x > div > div > div.css-1dbjc4n.r-14l'
-            'w9ot.r-6koalj.r-16y2uox.r-1wbh5a2 > div.css-1dbjc4n.r-16y2uox.r-1'
-            'wbh5a2.r-1jgb5lz.r-1ye8kvj.r-13qz1uu > div.css-1dbjc4n.r-16y2uox.'
-            'r-1wbh5a2.r-1dqxon3 > div > div > div:nth-child(6) > div > span >'
-            ' span', sleep=2)
+        self.brs.click('#layers > div > div > div > div > div > div > div.css-1dbjc4n.r-1awozwy.r-18u37iz.r-1pi2tsx.r-1777fci.r-1xcajam.r-ipm5af.r-g6jmlv > div.css-1dbjc4n.r-1867qdf.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9w.r-1279nm1.r-htvplk.r-1udh08x > div > div > div.css-1dbjc4n.r-14lw9ot.r-6koalj.r-16y2uox.r-1wbh5a2 > div.css-1dbjc4n.r-16y2uox.r-1wbh5a2.r-1jgb5lz.r-1ye8kvj.r-13qz1uu > div.css-1dbjc4n.r-16y2uox.r-1wbh5a2.r-1dqxon3 > div > div > div:nth-child(6) > div > span > span',
+                       sleep=2)
 
         if self.brs.wait('input[data-testid="ocfEnterTextTextInput"]', timeout=3):
             self.brs.send('input[data-testid="ocfEnterTextTextInput"]', username)
-            self.brs.click(
-                '#layers > div > div > div > div > div > div > div.css-1dbjc4n'
-                '.r-1awozwy.r-18u37iz.r-1pi2tsx.r-1777fci.r-1xcajam.r-ipm5af.r'
-                '-g6jmlv > div.css-1dbjc4n.r-1867qdf.r-1wbh5a2.r-kwpbio.r-rsyp'
-                '9y.r-1pjcn9w.r-1279nm1.r-htvplk.r-1udh08x > div > div > div.c'
-                'ss-1dbjc4n.r-14lw9ot.r-6koalj.r-16y2uox.r-1wbh5a2 > div.css-1'
-                'dbjc4n.r-16y2uox.r-1wbh5a2.r-1jgb5lz.r-1ye8kvj.r-13qz1uu > di'
-                'v.css-1dbjc4n.r-hhvx09.r-1dye5f7.r-ttdzmv > div > div > span', sleep=2)
+            self.brs.click('#layers > div > div > div > div > div > div > div.css-1dbjc4n.r-1awozwy.r-18u37iz.r-1pi2tsx.r-1777fci.r-1xcajam.r-ipm5af.r-g6jmlv > div.css-1dbjc4n.r-1867qdf.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9w.r-1279nm1.r-htvplk.r-1udh08x > div > div > div.css-1dbjc4n.r-14lw9ot.r-6koalj.r-16y2uox.r-1wbh5a2 > div.css-1dbjc4n.r-16y2uox.r-1wbh5a2.r-1jgb5lz.r-1ye8kvj.r-13qz1uu > div.css-1dbjc4n.r-hhvx09.r-1dye5f7.r-ttdzmv > div > div > span',
+                           sleep=2)
         
         self.brs.send('input[name="password"]', password)
-        self.brs.click(
-            '#layers > div > div > div > div > div > div > div.css-1dbjc4n.r-'
-            '1awozwy.r-18u37iz.r-1pi2tsx.r-1777fci.r-1xcajam.r-ipm5af.r-g6jmlv'
-            ' > div.css-1dbjc4n.r-1867qdf.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9'
-            'w.r-1279nm1.r-htvplk.r-1udh08x > div > div > div.css-1dbjc4n.r-14'
-            'lw9ot.r-6koalj.r-16y2uox.r-1wbh5a2 > div.css-1dbjc4n.r-16y2uox.r-'
-            '1wbh5a2.r-1jgb5lz.r-1ye8kvj.r-13qz1uu > div.css-1dbjc4n.r-hhvx09.'
-            'r-1dye5f7.r-ttdzmv > div > div.css-18t94o4.css-1dbjc4n.r-1m3jxhj.'
-            'r-sdzlij.r-1phboty.r-rs99b7.r-ywje51.r-usiww2.r-peo1c.r-1ps3wis.r'
-            '-1ny4l3l.r-1guathk.r-o7ynqc.r-6416eg.r-lrvibr.r-13qz1uu > div > '
-            'span > span', sleep=2)
+        self.brs.click('span.css-bfa6kz:nth-child(1) > span:nth-child(1)',
+                       sleep=2)
         
         os.makedirs(self.out, exist_ok=True)
         with open(f'{self.out}/session.json', 'w') as f:
@@ -101,12 +81,11 @@ class Twitter:
 
 
     def user_info(self, uname):
+        out, data = {}, {}
         self.brs.get(f'https://www.twitter.com/{uname}', sleep=2)
-        out = {}
-        data = {}
-        for m, p in self.brs.get_xhr():
-            if m['method'] == 'Network.responseReceived' and 'UserByScreenName' in m['params']['response']['url']:
-                data = json.loads(p['body'])
+        for log in self.brs.get_xhr(reset=True):
+            if 'UserByScreenName' in log['req.url']:
+                data = json.loads(log['res.body'])
                 break
         data = data['data']['user']['result']
         out['uid'] = int(data['rest_id'])
@@ -131,15 +110,19 @@ class Twitter:
         self.db.insert_rows(name='Info', rows=[info])
 
         self.brs.get(f'https://www.twitter.com/{uname}/followers', sleep=2)
-        self.brs.scroll(2000)
-        headers = {}
-        url = None
-        for m, p in self.brs.get_xhr():
-            if m['method'] == 'Network.requestWillBeSent' and'/followers' in m['params']['documentURL']:
-                if 'Followers' in m['params']['request']['url'] and 'cursor' in m['params']['request']['url']:
-                    for k,v in m['params']['request']['headers'].items():
-                        headers[k.lower()] = v
-                    url = unquote_plus(m['params']['request']['url'])
+        self.brs.wait('section.css-1dbjc4n:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)')
+        
+        pos, flag = 500, True
+        while flag:
+            self.brs.scroll(pos)
+            pos += 500
+            headers, url = {}, None
+            for log in self.brs.get_xhr(reset=True):
+                if 'Followers' in log['req.url'] and 'cursor' in log['req.url']:
+
+                    headers = {k.lower():v for k,v in log['req.headers'].items()}
+                    url = unquote_plus(log['req.url'])
+                    flag = False
                     break
         headers['accept-language'] = 'en-GB,en-US;q=0.9,en;q=0.8,it;q=0.7'
         headers['authority'] = 'twitter.com'
@@ -149,10 +132,6 @@ class Twitter:
         headers['sec-fetch-mode'] = 'cors'
         headers['sec-fetch-dest'] = 'empty'
         headers['cookie'] = '; '.join([f'{c["name"]}={c["value"]}' for c in self.brs.get_info('cookies')])
-        
-        print(url, end='\n\n')
-        print(urlparse(url).query, end='\n\n')
-        print(urlparse(url).query.split('variables='))
         
         variables = json.loads(urlparse(url).query.split('variables=')[1])
         variables['count'] = 100
@@ -234,5 +213,6 @@ class Twitter:
                     time.sleep(60 * (15 - remaining))
                 else:
                     time.sleep(1)
+                    return True
             else:
-                return
+                return True
