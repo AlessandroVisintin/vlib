@@ -83,11 +83,19 @@ class Twitter:
     def user_info(self, uname):
         out, data = {}, {}
         self.brs.get(f'https://www.twitter.com/{uname}', sleep=2)
-        for log in self.brs.get_xhr(reset=True):
-            if 'UserByScreenName' in log['req.url']:
-                data = json.loads(log['res.body'])
+        
+        while True:
+            try:
+                for log in self.brs.get_xhr(reset=True):
+                    if 'UserByScreenName' in log['req.url']:
+                        data = json.loads(log['res.body'])
+                        break
+                data = data['data']['user']['result']
                 break
-        data = data['data']['user']['result']
+            except KeyError:
+                time.sleep(5)
+                continue
+            
         out['uid'] = int(data['rest_id'])
         out['uname'] = str(data['legacy']['screen_name'])
         out['cdate'] = Twitter.tostamp(data['legacy']['created_at'])
@@ -213,6 +221,5 @@ class Twitter:
                     time.sleep(60 * (15 - remaining))
                 else:
                     time.sleep(1)
-                    return True
             else:
                 return True
