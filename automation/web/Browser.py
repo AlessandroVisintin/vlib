@@ -67,7 +67,7 @@ class Browser(Driver):
     
     
     def get_text(self, selector):
-        e = super()._css(selector)
+        e = super()._css(selector, timeout=1)
         if not e:
             return None
         return e.text

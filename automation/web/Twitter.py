@@ -1,4 +1,4 @@
-import math
+from urllib.parse import quote_plus
 from datetime import datetime as dt
 import os, json, requests, time
 from urllib.parse import urlparse, unquote_plus
@@ -28,29 +28,30 @@ class Twitter:
         if 'out_folder' in kwargs:
             self.out = kwargs['out_folder']
         
-        self.db = SQLite(self.out, 'Twitter.db')
-        self.db.create_table(
-            name='Users',
-            cols=[('uid','INTEGER'),('uname','TEXT'),('cdate','INTEGER')],
-            key=('uid',)
-        )
-        self.db.create_table(
-            name='Info',
-            cols=[('uid','INTEGER'),('stamp','INTEGER'),('fng','INTEGER'),('fws','INTEGER'),('twt','INTEGER'),('img','INTEGER'),('nam','TEXT'),('dsc','TEXT'),('loc','TEXT')],
-            key=('uid','stamp')
-        )
-        self.db.create_table(
-            name='Followers',
-            cols=[('uid1','INTEGER'),('uid2','INTEGER'),('top','INTEGER'),('btm','INTEGER'),('idx','INTEGER')],
-            key=('uid1','uid2')
-        )
+        #self.db = SQLite(self.out, 'Twitter.db')
+        #self.db.create_table(
+        #    name='Users',
+        #    cols=[('uid','INTEGER'),('uname','TEXT'),('cdate','INTEGER')],
+        #    key=('uid',)
+        #)
+        #self.db.create_table(
+        #    name='Info',
+        #    cols=[('uid','INTEGER'),('stamp','INTEGER'),('fng','INTEGER'),('fws','INTEGER'),('twt','INTEGER'),('img','INTEGER'),('nam','TEXT'),('dsc','TEXT'),('loc','TEXT')],
+        #    key=('uid','stamp')
+        #)
+        #self.db.create_table(
+        #    name='Followers',
+        #    cols=[('uid1','INTEGER'),('uid2','INTEGER'),('top','INTEGER'),('btm','INTEGER'),('idx','INTEGER')],
+        #    key=('uid1','uid2')
+        #)
         
         self.brs = Browser(self.bname, **kwargs)
 
 
     def load_session(self, email, username, password):
-        if os.path.exists(f'{self.out}/session.json'):
-            with open(f'{self.out}/session.json', 'r') as f:
+        SESSION = 'twitter_session.json'
+        if os.path.exists(f'{self.out}/{SESSION}'):
+            with open(f'{self.out}/{SESSION}', 'r') as f:
                 out = json.load(f)    
                 if (time.time() - out['t']) < 86400:
                     self.brs.get('https://twitter.com')
@@ -74,7 +75,7 @@ class Twitter:
                        sleep=2)
         
         os.makedirs(self.out, exist_ok=True)
-        with open(f'{self.out}/session.json', 'w') as f:
+        with open(f'{self.out}/{SESSION}', 'w') as f:
             out = {'t': int(time.time()), 'c' : self.brs.get_info('cookies')}
             f.write(json.dumps(out))
             f.flush()
@@ -110,116 +111,109 @@ class Twitter:
 
 
     def crawl_followers(self, uname, crs=None, verbose=True, res=3600):
-        ui = self.user_info(uname)
-        user = (ui['uid'], ui['uname'], ui['cdate'])
-        cday = int(int(time.time() / 86400) * 86400)
-        info = (ui['uid'], cday, ui['fng'], ui['fws'], ui['twt'], ui['img'], ui['nam'], ui['dsc'], ui['loc'])
-        self.db.insert_rows(name='Users', rows=[user])
-        self.db.insert_rows(name='Info', rows=[info])
+        with open(f'{self.out}/fwers_{uname}', 'w') as f:
 
-        self.brs.get(f'https://www.twitter.com/{uname}/followers', sleep=2)
-        self.brs.wait('section.css-1dbjc4n:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)')
+            ui = self.user_info(uname)
+            f.write(f'u\t{int(time.time())}\t{ui["uid"]}\t{ui["uname"]}\t{ui["cdate"]}')
+            f.write(f'\t{ui["fng"]}\t{ui["fws"]}\t{ui["twt"]}\t{ui["img"]}')
+            f.write(f'\t{quote_plus(ui["nam"])}\n')
+            #f.write(f'\t{quote_plus(ui["dsc"])}\t{quote_plus(ui["loc"])}')
+            
+            self.brs.get(f'https://www.twitter.com/{uname}/followers', sleep=2)
+            self.brs.wait('section.css-1dbjc4n:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)')
         
-        pos, flag = 500, True
-        while flag:
-            self.brs.scroll(pos)
-            pos += 500
-            headers, url = {}, None
-            for log in self.brs.get_xhr(reset=True):
-                if 'Followers' in log['req.url'] and 'cursor' in log['req.url']:
-
-                    headers = {k.lower():v for k,v in log['req.headers'].items()}
-                    url = unquote_plus(log['req.url'])
-                    flag = False
-                    break
-        headers['accept-language'] = 'en-GB,en-US;q=0.9,en;q=0.8,it;q=0.7'
-        headers['authority'] = 'twitter.com'
-        headers['content-type'] = 'application/json'
-        headers['accept'] = '*/*'
-        headers['sec-fetch-site'] = 'same-origin'
-        headers['sec-fetch-mode'] = 'cors'
-        headers['sec-fetch-dest'] = 'empty'
-        headers['cookie'] = '; '.join([f'{c["name"]}={c["value"]}' for c in self.brs.get_info('cookies')])
-        
-        variables = json.loads(urlparse(url).query.split('variables=')[1])
-        variables['count'] = 100
-        if crs is not None:
-            variables['cursor'] = crs
-        
-        while True:
-            try:
-                current_time = int(round(time.time()))
-                params = (('variables', json.dumps(variables)),)
-                response = requests.get(url.split('?variables')[0], headers=headers, params=params)
-            except BaseException as e:
-                print(e)
-                print(variables['cursor'])
-                time.sleep(60)
-                continue
+            pos, flag = 500, True
+            while flag:
+                self.brs.scroll(pos)
+                pos += 500
+                headers, url = {}, None
+                for log in self.brs.get_xhr(reset=True):
+                    if 'Followers' in log['req.url'] and 'cursor' in log['req.url']:
+    
+                        headers = {k.lower():v for k,v in log['req.headers'].items()}
+                        url = unquote_plus(log['req.url'])
+                        flag = False
+                        break
+            headers['accept-language'] = 'en-GB,en-US;q=0.9,en;q=0.8,it;q=0.7'
+            headers['authority'] = 'twitter.com'
+            headers['content-type'] = 'application/json'
+            headers['accept'] = '*/*'
+            headers['sec-fetch-site'] = 'same-origin'
+            headers['sec-fetch-mode'] = 'cors'
+            headers['sec-fetch-dest'] = 'empty'
+            headers['cookie'] = '; '.join([f'{c["name"]}={c["value"]}' for c in self.brs.get_info('cookies')])
             
-            try:
-                data = json.loads(response.text)
-                data = data['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']
-                tmp = [e['content']['itemContent']['user_results']['result'] for e in data if 'user' in e['entryId']]
-            except KeyError:
-                time.sleep(60)
-                continue
-
-            top = variables['cursor']
-            btm = [e['content'] for e in data if 'cursor-bottom' in e['entryId']][0]['value']
-            prv = int(top.split('|')[0])
-            prv = current_time if prv < 0 else int(Twitter.crs2stamp(prv))
-            nxt = int(btm.split('|')[0])
-            nxt = ui['cdate'] if nxt == 0 else int(Twitter.crs2stamp(nxt))
+            variables = json.loads(urlparse(url).query.split('variables=')[1])
+            variables['count'] = 100
+            if crs is not None:
+                variables['cursor'] = crs
             
-            count = variables['count']
-            if (prv - nxt) > res and count > 1:
-                count = 1 if (count - 5) < 1 else (count - 5)
-                variables['count'] = count
-                if verbose:
-                    print(f'count reduced to {count}')
-                continue
-            elif (prv - nxt) < (res / 2) and count < 100:
-                count = 100 if (count + 5) > 100 else (count + 5)
-                variables['count'] = count
-                if verbose:
-                    print(f'count augmented to {count}')
-            
-            users = [
-                (
-                    int(e['rest_id']),
-                    str(e['legacy']['screen_name']),
-                    Twitter.tostamp(e['legacy']['created_at'])
-                ) for e in tmp]
-            info = [
-                (
-                    int(e['rest_id']),
-                    int(int(current_time / 86400) * 86400),
-                    int(e['legacy']['friends_count']),
-                    int(e['legacy']['followers_count']),
-                    int(e['legacy']['statuses_count']),
-                    0 if 'default' in e['legacy']['profile_image_url_https'] else 1,
-                    str(e['legacy']['name']),
-                    str(e['legacy']['description']),
-                    str(e['legacy']['location']),
-                 ) for e in tmp]
-            
-            followers = [(int(variables['userId']), e[0], prv, nxt, idx)
-                    for idx,e in enumerate(users)]
-        
-            self.db.insert_rows(name='Users', rows=users)
-            self.db.insert_rows(name='Info', rows=info)
-            self.db.insert_rows(name='Followers', rows=followers)
-            
-            if nxt > ui['cdate']:
-                variables['cursor'] = btm
-                remaining = int(response.headers['x-rate-limit-remaining'])
-                if verbose:
-                    print(f'{uname} {len(users)} {variables["cursor"]}')
-                    print(f'{stamp2str(prv)} - {stamp2str(nxt)} - {remaining}\n')
-                if remaining < 15:
-                    time.sleep(60 * (15 - remaining))
+            while True:
+                try:
+                    current_time = int(round(time.time()))
+                    params = (('variables', json.dumps(variables)),)
+                    response = requests.get(url.split('?variables')[0], headers=headers, params=params)
+                except BaseException as e:
+                    print(e)
+                    print(variables['cursor'])
+                    time.sleep(60)
+                    continue
+                
+                try:
+                    data = json.loads(response.text)
+                    data = data['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']
+                    tmp = [e['content']['itemContent']['user_results']['result'] for e in data if 'user' in e['entryId']]
+                except KeyError:
+                    time.sleep(60)
+                    continue
+    
+                top = variables['cursor']
+                btm = [e['content'] for e in data if 'cursor-bottom' in e['entryId']][0]['value']
+                prv = int(top.split('|')[0])
+                prv = current_time if prv < 0 else int(Twitter.crs2stamp(prv))
+                nxt = int(btm.split('|')[0])
+                nxt = ui['cdate'] if nxt == 0 else int(Twitter.crs2stamp(nxt))
+                
+                f.write(f'c\t{prv}\t{nxt}\n')
+                
+                count = variables['count']
+                if (prv - nxt) > res and count > 1:
+                    count = 1 if (count - 5) < 1 else (count - 5)
+                    variables['count'] = count
+                    if verbose:
+                        print(f'count reduced to {count}')
+                    continue
+                elif (prv - nxt) < (res / 2) and count < 100:
+                    count = 100 if (count + 5) > 100 else (count + 5)
+                    variables['count'] = count
+                    if verbose:
+                        print(f'count augmented to {count}')
+                
+                for e in tmp:
+                    f.write(f'f\t{e["rest_id"]}\t{e["legacy"]["screen_name"]}\t')
+                    f.write(f'{Twitter.tostamp(e["legacy"]["created_at"])}\t')
+                    f.write(f'{e["legacy"]["friends_count"]}\t{e["legacy"]["followers_count"]}\t')
+                    f.write(f'{e["legacy"]["statuses_count"]}\t')
+                    
+                    img = 0 if 'default' in e['legacy']['profile_image_url_https'] else 1
+                    f.write(f'{img}\t')
+                    
+                    f.write(f'{quote_plus(e["legacy"]["name"])}\n')
+                    #f.write(f'{quote_plus(e["legacy"]["description"])}\t')
+                    #f.write(f'{quote_plus(e["legacy"]["location"])}\n')
+                
+                if nxt > ui['cdate']:
+                    variables['cursor'] = btm
+                    remaining = int(response.headers['x-rate-limit-remaining'])
+                    with open(f'{self.out}/status', 'w') as g:
+                        g.write(f'{uname} {len(tmp)} {variables["cursor"]}\n')
+                        g.write(f'{stamp2str(prv)} - {stamp2str(nxt)} - {remaining}')
+                    if verbose:
+                        print(f'{uname} {len(tmp)} {variables["cursor"]}')
+                        print(f'{stamp2str(prv)} - {stamp2str(nxt)} - {remaining}\n')
+                    if remaining < 15:
+                        time.sleep(60 * (15 - remaining))
+                    else:
+                        time.sleep(1)
                 else:
-                    time.sleep(1)
-            else:
-                return True
+                    return True

@@ -1,4 +1,5 @@
 import time
+import json
 from collections import deque
 from urllib.parse import quote_plus
 from vlib.automation.web.Browser import Browser
@@ -8,10 +9,12 @@ from vlib.utils.JSONBox import JSONBox
 class Redbubble:
     
 
-    def __init__(self, drv_path, out_path):
-        self.out = out_path
-        self.drv = drv_path
-        self.brs = Browser(self.drv, headless=True)
+    def __init__(self, browser, **kwargs):
+        self.bname = browser
+        self.out = '.'
+        if 'out_folder' in kwargs:
+            self.out = kwargs['out_folder']
+        self.brs = Browser(self.bname, **kwargs)
     
     
     def search_results(self, key):
@@ -38,7 +41,7 @@ class Redbubble:
 
     def batch_search(self, itr):
         base = int(time.time())
-        with open(f'{self.out}/log', 'a') as f:
+        with open(f'{self.out}/rb_search_{base}', 'w') as f:
             f.write(f'b\t{base}\n')
             out = deque(['_'])
             cache = set()
@@ -53,9 +56,9 @@ class Redbubble:
                             break
                         except Exception as e:
                             print(e)
-                            del self.brs
                             time.sleep(60)
-                            self.brs = Browser(self.drv, headless=True)
+                            continue
+                            
                     for e in [tuple(x) for x in lst]:
                         if not e in cache:
                             flag = True
@@ -66,4 +69,40 @@ class Redbubble:
                 if flag or len(term) == 1:
                     out.extend([term+c for c in itr])
                 print(f'{term} {len(out)}')
-   
+
+
+    def get_search_info(self, tag):
+        url = f'https://www.redbubble.com/shop/?query={quote_plus(tag)}&ref=search_box'
+        self.brs.get(url)
+        count = self.brs.get_text('div.styles__paddingLeft-xs--oc_Ov:nth-child(2) > span:nth-child(1)')
+        rel = self.brs.get_text('.styles__carouselContainer--3_gKC > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)')
+        count = count.split(' ')[0]
+        rel = [] if rel is None else rel.strip().split('\n')
+        return int(count.replace(',','')), [x.lower() for x in rel] 
+        
+        #data = []
+        #try:
+        #    for log in self.brs.get_xhr(reset=False):
+        #        if 'graphql' in log['req.url']:
+        #            req = json.loads(log['req.body'])
+        #            print(req)
+        #            if 'Search' in req['operationName']:
+        #                data = json.loads(log['res.body'])
+        #                break
+        #    data = data['data']['searchResults']['metadata']
+        #except (KeyError, TypeError):
+        #    return None        
+        #return [data['resultCount'], [x['title'] for x in data['relatedTopics']]]
+
+
+    def batch_get_search_info(self, lst):
+        base = int(time.time())
+        with open(f'{self.out}/rb_info_{base}', 'w') as f:
+            f.write(f'b\t{base}\n')
+            for tag in lst:
+                print(tag)
+                count, rel = self.get_search_info(tag)
+                f.write(f'{tag}\t{count}\t{",".join(rel)}\t{int(time.time()) - base}\n')
+                f.flush()
+                
+        
