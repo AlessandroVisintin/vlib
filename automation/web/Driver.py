@@ -37,6 +37,24 @@ class Driver:
             options.binary_location = kwargs['binary']
         if 'headless' in kwargs:
             options.headless = kwargs['headless']
+        if 'load_images' in kwargs:
+            if kwargs['load_images'] == False:
+                if browser == 'chrome':
+                    pass
+                    #options.add_experimental_option(name, value)
+                    #prefs['profile.default_content_settings'] = {'images': 2}
+                    #prefs['profile.managed_default_content_settings'] = {'images': 2}
+                else:
+                    options.set_preference('permissions.default.image', 2)
+                    options.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+        if 'load_css' in kwargs:
+            if kwargs['load_css'] == False:
+                if browser == 'chrome':
+                    pass
+                else:
+                    options.set_preference('permissions.default.stylesheet', 2)
+            
+                    
             
         self.drv = _drv(options=options, service=service)
         
