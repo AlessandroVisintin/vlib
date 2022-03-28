@@ -148,6 +148,7 @@ class Twitter:
             if crs is not None:
                 variables['cursor'] = crs
             
+            xratelim = None
             while True:
                 try:
                     current_time = int(round(time.time()))
@@ -204,15 +205,17 @@ class Twitter:
                 
                 if nxt > ui['cdate']:
                     variables['cursor'] = btm
-                    remaining = int(response.headers['x-rate-limit-remaining'])
+                    try:
+                        xratelim = int(response.headers['x-rate-limit-remaining'])
+                    except KeyError:
+                        xratelim -= 1
+                    s = f'{uname} {len(tmp)} {variables["cursor"]}\n{stamp2str(prv)} - {stamp2str(nxt)} - {xratelim}'
                     with open(f'{self.out}/status', 'w') as g:
-                        g.write(f'{uname} {len(tmp)} {variables["cursor"]}\n')
-                        g.write(f'{stamp2str(prv)} - {stamp2str(nxt)} - {remaining}')
+                        g.write(s)
                     if verbose:
-                        print(f'{uname} {len(tmp)} {variables["cursor"]}')
-                        print(f'{stamp2str(prv)} - {stamp2str(nxt)} - {remaining}\n')
-                    if remaining < 15:
-                        time.sleep(60 * (15 - remaining))
+                        print(s)
+                    if xratelim < 15:
+                        time.sleep(60 * (15 - xratelim))
                     else:
                         time.sleep(1)
                 else:

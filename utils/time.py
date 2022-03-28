@@ -1,4 +1,5 @@
 import numpy as np
+import pytz
 from math import radians, degrees
 from cmath import rect, phase
 from datetime import datetime as dt
@@ -9,7 +10,8 @@ def stamp2str(stamp, form='%Y-%m-%d %H:%M:%S'):
 
 
 def str2stamp(string, form='%Y-%m-%d %H:%M:%S'):
-    return dt.strptime(string, form).timestamp()
+    no_aware = dt.strptime(string, form)
+    return pytz.utc.localize(no_aware).timestamp()
 
 
 def getfromstr(string, info, form='%Y-%m-%d %H:%M:%S'):
