@@ -191,17 +191,18 @@ class Twitter:
                         print(f'count augmented to {count}')
                 
                 for e in tmp:
-                    f.write(f'f\t{e["rest_id"]}\t{e["legacy"]["screen_name"]}\t')
-                    f.write(f'{Twitter.tostamp(e["legacy"]["created_at"])}\t')
-                    f.write(f'{e["legacy"]["friends_count"]}\t{e["legacy"]["followers_count"]}\t')
-                    f.write(f'{e["legacy"]["statuses_count"]}\t')
-                    
-                    img = 0 if 'default' in e['legacy']['profile_image_url_https'] else 1
-                    f.write(f'{img}\t')
-                    
-                    f.write(f'{quote_plus(e["legacy"]["name"])}\n')
-                    #f.write(f'{quote_plus(e["legacy"]["description"])}\t')
-                    #f.write(f'{quote_plus(e["legacy"]["location"])}\n')
+                    try:
+                        f.write(f'f\t{e["rest_id"]}\t{e["legacy"]["screen_name"]}\t')
+                        f.write(f'{Twitter.tostamp(e["legacy"]["created_at"])}\t')
+                        f.write(f'{e["legacy"]["friends_count"]}\t{e["legacy"]["followers_count"]}\t')
+                        f.write(f'{e["legacy"]["statuses_count"]}\t')
+                        img = 0 if 'default' in e['legacy']['profile_image_url_https'] else 1
+                        f.write(f'{img}\t')
+                        f.write(f'{quote_plus(e["legacy"]["name"])}\n')
+                        #f.write(f'{quote_plus(e["legacy"]["description"])}\t')
+                        #f.write(f'{quote_plus(e["legacy"]["location"])}\n')
+                    except KeyError:
+                        pass
                 
                 if nxt > ui['cdate']:
                     variables['cursor'] = btm

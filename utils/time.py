@@ -16,6 +16,7 @@ def str2stamp(string, form='%Y-%m-%d %H:%M:%S'):
 
 def getfromstr(string, info, form='%Y-%m-%d %H:%M:%S'):
     time = dt.strptime(string, form)
+    time = pytz.utc.localize(time)
     if info == 'seconds':
         return time.second
     if info == 'minutes':
@@ -28,6 +29,7 @@ def mean_time(times, form='%H:%M:%S'):
     rad = []
     for time in times:
         time = dt.strptime(time, form)
+        time = pytz.utc.localize(time)
         seconds = time.second + time.minute * 60 + time.hour * 3600
         rad.append(rect(1, radians(seconds * 360 / 86400)))
     mean = degrees(np.mean(rad)) * 86400 / 360
