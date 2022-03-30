@@ -164,7 +164,7 @@ class Twitter:
                     data = json.loads(response.text)
                     data = data['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']
                     tmp = [e['content']['itemContent']['user_results']['result'] for e in data if 'user' in e['entryId']]
-                except KeyError:
+                except (KeyError, json.decoder.JSONDecodeError):
                     time.sleep(60)
                     continue
     
