@@ -53,6 +53,12 @@ class Driver:
                     pass
                 else:
                     options.set_preference('permissions.default.stylesheet', 2)
+        
+        if 'clear_cache' in kwargs and kwargs['clear_cache'] == True:
+            if browser == 'chrome':
+                pass
+            else:
+                pass
             
                     
             

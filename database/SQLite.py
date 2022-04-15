@@ -70,5 +70,7 @@ class SQLite:
             f'FROM {name}'
             f'{" "+" ".join(kwargs["filters"]) if "filters" in kwargs else ""};'
         )
+        if 'fetch' in kwargs:
+            return self._query(query, fetch=kwargs['fetch'])
         return self._query(query)
         
