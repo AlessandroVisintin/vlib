@@ -135,7 +135,8 @@ class Twitter:
                     'img': 0 if 'default' in data['legacy']['profile_image_url_https'] else 1,
                     'nam': str(data['legacy']['name']),
                     'dsc': str(data['legacy']['description']),
-                    'loc': str(data['legacy']['location'])
+                    'loc': str(data['legacy']['location']),
+                    'pro': data['legacy']['protected']
                 }
             except KeyError:
                 time.sleep(5)
@@ -150,6 +151,9 @@ class Twitter:
         with open(f'{self.out}/{out}', 'a+') as f:
 
             ui = self.user_info(uname)
+            if ui['pro']:
+                return True
+            
             f.write(f'u\t{int(time.time())}\t{ui["uid"]}\t{ui["uname"]}\t{ui["cdate"]}')
             f.write(f'\t{ui["fng"]}\t{ui["fws"]}\t{ui["twt"]}\t{ui["img"]}')
             f.write(f'\t{quote_plus(ui["nam"])}\n')
@@ -190,6 +194,7 @@ class Twitter:
                         elif 'cursor-bottom' in e['entryId']:
                             btm = e['content']['value']
                 except (KeyError, json.decoder.JSONDecodeError):
+                    print(e, variables['cursor'])
                     time.sleep(60)
                     continue
 
@@ -225,8 +230,6 @@ class Twitter:
                         #f.write(f'{quote_plus(e["legacy"]["location"])}\n')
                     except KeyError:
                         pass
-                
-                return True
                 
                 if nxt > ui['cdate']:
                     variables['cursor'] = btm
