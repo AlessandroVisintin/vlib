@@ -231,17 +231,18 @@ class Twitter:
                     except KeyError:
                         pass
                 
+                variables['cursor'] = btm
+                try:
+                    xratelim = int(response.headers['x-rate-limit-remaining'])
+                except KeyError:
+                    xratelim -= 1
+                s = f'{uname} {len(users)} {variables["cursor"]}\n{stamp2str(prv)} - {stamp2str(nxt)} - {xratelim}'
+                with open(f'{self.out}/status', 'w') as g:
+                    g.write(s)
+                if verbose:
+                    print(s)
+                
                 if nxt > ui['cdate']:
-                    variables['cursor'] = btm
-                    try:
-                        xratelim = int(response.headers['x-rate-limit-remaining'])
-                    except KeyError:
-                        xratelim -= 1
-                    s = f'{uname} {len(users)} {variables["cursor"]}\n{stamp2str(prv)} - {stamp2str(nxt)} - {xratelim}'
-                    with open(f'{self.out}/status', 'w') as g:
-                        g.write(s)
-                    if verbose:
-                        print(s)
                     if xratelim < 15:
                         time.sleep(60 * (15 - xratelim))
                     else:
