@@ -184,15 +184,15 @@ class Twitter:
                 try:
                     data = json.loads(response.text)
                     data = data['data']['user']['result']['timeline']['timeline']['instructions'][-1]['entries']
-                    idx = len(data) - variables['count']
-                    if idx < 0:
-                        idx = 0
                     users, btm = [], None
-                    for e in data[idx:]:
+                    for e in data:
                         if 'user' in e['entryId']:
                             users.append(e['content']['itemContent']['user_results']['result'])
                         elif 'cursor-bottom' in e['entryId']:
                             btm = e['content']['value']
+                    idx = len(users) - variables['count'] 
+                    if idx > 0:
+                        users = users[idx:]
                 except (KeyError, json.decoder.JSONDecodeError):
                     print(e, variables['cursor'])
                     time.sleep(60)
