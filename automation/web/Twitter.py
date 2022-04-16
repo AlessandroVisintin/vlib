@@ -237,7 +237,10 @@ class Twitter:
                 try:
                     xratelim = int(response.headers['x-rate-limit-remaining'])
                 except KeyError:
-                    xratelim -= 1
+                    if xratelim is None:
+                        xratelim = 15
+                    else:
+                        xratelim -= 1
                 s = f'{uname} {len(users)} {variables["cursor"]}\n{stamp2str(prv)} - {stamp2str(nxt)} - {xratelim}'
                 with open(f'{self.out}/status', 'w') as g:
                     g.write(s)
