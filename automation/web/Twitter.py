@@ -143,7 +143,7 @@ class Twitter:
                 continue
 
 
-    def crawl_followers(self, uname, crs=-1, verbose=True, res=3600, out=None):
+    def crawl_followers(self, uname, crs='-1', verbose=True, res=3600, out=None):
         
         if out is None:
             out = f'fwers_{uname}'
@@ -197,9 +197,11 @@ class Twitter:
                     print(e, variables['cursor'])
                     time.sleep(60)
                     continue
-
-                prv = current_time if variables['cursor'] < 0 else int(Twitter.crs2stamp(int(variables['cursor'].split('|')[0])))
+                
+                
+                prv = int(variables['cursor'].split('|')[0])
                 nxt = int(btm.split('|')[0])
+                prv = current_time if prv < 0 else int(Twitter.crs2stamp(prv))
                 nxt = ui['cdate'] if nxt == 0 else int(Twitter.crs2stamp(nxt))
                 
                 f.write(f'c\t{prv}\t{nxt}\n')
