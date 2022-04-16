@@ -142,8 +142,12 @@ class Twitter:
                 continue
 
 
-    def crawl_followers(self, uname, crs=-1, verbose=True, res=3600):
-        with open(f'{self.out}/fwers_{uname}', 'a+') as f:
+    def crawl_followers(self, uname, crs=-1, verbose=True, res=3600, out=None):
+        
+        if out is None:
+            out = f'fwers_{uname}'
+        
+        with open(f'{self.out}/{out}', 'a+') as f:
 
             ui = self.user_info(uname)
             f.write(f'u\t{int(time.time())}\t{ui["uid"]}\t{ui["uname"]}\t{ui["cdate"]}')
