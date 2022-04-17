@@ -120,10 +120,19 @@ class Twitter:
             }
         params['variables'] = json.dumps(params['variables'])
         
+        c = 0
         while True:
             try:
                 response = requests.get(url, headers=self.headers, params=params)
                 data = json.loads(response.text)
+                if not data['data']:
+                    c += 1
+                    if c > 3:
+                        return {}
+                    else:
+                        time.sleep(5)
+                        continue
+                    
                 data = data['data']['user']['result']
                 return {
                     'uid': int(data['rest_id']),
@@ -151,7 +160,7 @@ class Twitter:
         with open(f'{self.out}/{out}', 'a+') as f:
 
             ui = self.user_info(uname)
-            if ui['pro']:
+            if not ui or ui['pro']:
                 return True
             
             f.write(f'u\t{int(time.time())}\t{ui["uid"]}\t{ui["uname"]}\t{ui["cdate"]}')
