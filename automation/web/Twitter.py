@@ -147,7 +147,7 @@ class Twitter:
                     'loc': str(data['legacy']['location']),
                     'pro': data['legacy']['protected']
                 }
-            except KeyError:
+            except (KeyError, ConnectionError):
                 time.sleep(5)
                 continue
 
