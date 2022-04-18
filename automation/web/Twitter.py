@@ -202,7 +202,7 @@ class Twitter:
                     idx = len(users) - variables['count'] 
                     if idx > 0:
                         users = users[idx:]
-                except (KeyError, json.decoder.JSONDecodeError):
+                except (KeyError, json.decoder.JSONDecodeError) as e:
                     print(e, variables['cursor'])
                     time.sleep(60)
                     continue
