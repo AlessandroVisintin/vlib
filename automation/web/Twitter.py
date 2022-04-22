@@ -134,19 +134,22 @@ class Twitter:
                         continue
                     
                 data = data['data']['user']['result']
-                return {
-                    'uid': int(data['rest_id']),
-                    'uname': str(data['legacy']['screen_name']),
-                    'cdate': Twitter.tostamp(data['legacy']['created_at']),
-                    'fng': int(data['legacy']['friends_count']),
-                    'fws': int(data['legacy']['followers_count']),
-                    'twt': int(data['legacy']['statuses_count']),
-                    'img': 0 if 'default' in data['legacy']['profile_image_url_https'] else 1,
-                    'nam': str(data['legacy']['name']),
-                    'dsc': str(data['legacy']['description']),
-                    'loc': str(data['legacy']['location']),
-                    'pro': data['legacy']['protected']
-                }
+                if data['__typename'] == 'UserUnavailable':
+                    return {}
+                else:
+                    return {
+                        'uid': int(data['rest_id']),
+                        'uname': str(data['legacy']['screen_name']),
+                        'cdate': Twitter.tostamp(data['legacy']['created_at']),
+                        'fng': int(data['legacy']['friends_count']),
+                        'fws': int(data['legacy']['followers_count']),
+                        'twt': int(data['legacy']['statuses_count']),
+                        'img': 0 if 'default' in data['legacy']['profile_image_url_https'] else 1,
+                        'nam': str(data['legacy']['name']),
+                        'dsc': str(data['legacy']['description']),
+                        'loc': str(data['legacy']['location']),
+                        'pro': data['legacy']['protected']
+                    }
             except (KeyError, ConnectionError, requests.exceptions.ConnectionError):
                 time.sleep(5)
                 continue
