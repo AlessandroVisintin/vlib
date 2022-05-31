@@ -20,6 +20,11 @@ class Twitter:
     def crs2stamp(cursor):
         return round((cursor >> 22) / 250, 3)
     
+    @staticmethod
+    def stamp2crs(stamp):
+        return int(round((stamp * 250))) << 22
+        #return round((cursor >> 22) / 250, 3)
+    
     
     def __init__(self, browser, **kwargs):
         
@@ -54,7 +59,7 @@ class Twitter:
                     return
         
         if self.brs is None:
-            self.brs = Browser(self.bname, self.kwargs)
+            self.brs = Browser(self.bname, **self.kwargs)
         
         self.brs.get('https://twitter.com/i/flow/login')
         self.brs.send('input[autocomplete="username"]', email)
@@ -81,9 +86,7 @@ class Twitter:
                         self.graphql['userinfo'] = tmp.split('/UserByScreenName')[0]
                         break
             except KeyError:
-                
                 print('keyerror')
-                
                 time.sleep(5)
                 continue
 
@@ -155,7 +158,7 @@ class Twitter:
                 continue
 
 
-    def crawl_followers(self, uname, crs='-1', verbose=True, res=3600, out=None):
+    def crawl_followers(self, uname, crs='-1', until=None, verbose=True, res=3600, out=None):
         
         if out is None:
             out = f'fwers_{uname}'
@@ -166,6 +169,9 @@ class Twitter:
             if not ui or ui['pro']:
                 return True
             
+            if until is None:
+                until = ui['cdate']
+            
             f.write(f'u\t{int(time.time())}\t{ui["uid"]}\t{ui["uname"]}\t{ui["cdate"]}')
             f.write(f'\t{ui["fng"]}\t{ui["fws"]}\t{ui["twt"]}\t{ui["img"]}')
             f.write(f'\t{quote_plus(ui["nam"])}\n')
@@ -175,7 +181,7 @@ class Twitter:
             url = f'https://twitter.com/i/api/graphql/{self.graphql["followers"]}/Followers'
             xratelim = None
             variables ={
-                'userId':ui['uid'], 'count':100, 'cursor':crs,
+                'userId':ui['uid'], 'count':100, 'cursor':str(crs),
                 'includePromotedContent':False, 'withSuperFollowsUserFields':True,
                 'withDownvotePerspective':False, 'withReactionsMetadata':False,
                 'withReactionsPerspective':False, 'withSuperFollowsTweetFields': True,
@@ -183,11 +189,19 @@ class Twitter:
                 '__fs_responsive_web_uc_gql_enabled':False
             }
             
+            features = {
+                'dont_mention_me_view_api_enabled':True, 'interactive_text_enabled':True,
+                'responsive_web_uc_gql_enabled':False, 'vibe_tweet_context_enabled':False,
+                'responsive_web_edit_tweet_api_enabled':False
+            }
+            
+            
+            print(variables)
             
             while True:
                 try:
                     current_time = int(round(time.time()))
-                    response = requests.get(url, headers=self.headers, params=(('variables', json.dumps(variables)),))
+                    response = requests.get(url, headers=self.headers, params=(('variables', json.dumps(variables)),('features', json.dumps(features))))
                 except BaseException as e:
                     print(e, variables['cursor'])
                     time.sleep(60)
@@ -209,7 +223,6 @@ class Twitter:
                     print(e, variables['cursor'])
                     time.sleep(60)
                     continue
-                
                 
                 prv = int(variables['cursor'].split('|')[0])
                 nxt = int(btm.split('|')[0])
@@ -259,7 +272,7 @@ class Twitter:
                 if verbose:
                     print(s)
                 
-                if nxt > ui['cdate']:
+                if nxt > until:
                     if xratelim < 15:
                         time.sleep(60 * (15 - xratelim))
                     else:

@@ -1,4 +1,4 @@
-import json, time
+import time
 from vlib.automation.web.Driver import Driver
 
 
