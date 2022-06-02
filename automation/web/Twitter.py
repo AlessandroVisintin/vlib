@@ -43,7 +43,7 @@ class Twitter:
 
 
     def load_session(self, email, username, password):
-        SESSION = 'twitter_session.json'
+        SESSION = f'twitter_session_{username}.json'
         if os.path.exists(f'{self.out}/{SESSION}'):
             with open(f'{self.out}/{SESSION}', 'r') as f:
                 out = json.load(f)    
@@ -252,8 +252,8 @@ class Twitter:
                         f.write(f'{e["legacy"]["statuses_count"]}\t')
                         img = 0 if 'default' in e['legacy']['profile_image_url_https'] else 1
                         f.write(f'{img}\t')
-                        f.write(f'{quote_plus(e["legacy"]["name"])}\n')
-                        #f.write(f'{quote_plus(e["legacy"]["description"])}\t')
+                        f.write(f'{quote_plus(e["legacy"]["name"])}\t')
+                        f.write(f'{quote_plus(e["legacy"]["description"])}\n')
                         #f.write(f'{quote_plus(e["legacy"]["location"])}\n')
                     except KeyError:
                         pass
