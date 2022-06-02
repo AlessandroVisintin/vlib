@@ -267,7 +267,7 @@ class Twitter:
                     else:
                         xratelim -= 1
                 s = f'{uname} {len(users)} {variables["cursor"]}\n{stamp2str(prv)} - {stamp2str(nxt)} - {xratelim}'
-                with open(f'{self.out}/status', 'w') as g:
+                with open(f'{self.out}/status_{uname}', 'w') as g:
                     g.write(s)
                 if verbose:
                     print(s)
