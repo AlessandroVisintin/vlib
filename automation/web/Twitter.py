@@ -158,7 +158,7 @@ class Twitter:
                 continue
 
 
-    def crawl_followers(self, uname, crs='-1', until=None, verbose=True, res=3600, out=None):
+    def crawl_followers(self, uname, crs='-1', count=100, until=None, verbose=True, res=3600, out=None):
         
         if out is None:
             out = f'fwers_{uname}'
@@ -181,7 +181,7 @@ class Twitter:
             url = f'https://twitter.com/i/api/graphql/{self.graphql["followers"]}/Followers'
             xratelim = None
             variables ={
-                'userId':ui['uid'], 'count':100, 'cursor':str(crs),
+                'userId':ui['uid'], 'count':count, 'cursor':str(crs),
                 'includePromotedContent':False, 'withSuperFollowsUserFields':True,
                 'withDownvotePerspective':False, 'withReactionsMetadata':False,
                 'withReactionsPerspective':False, 'withSuperFollowsTweetFields': True,
